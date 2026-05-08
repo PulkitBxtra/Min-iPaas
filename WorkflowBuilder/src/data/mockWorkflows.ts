@@ -1,0 +1,58 @@
+import type { Workflow } from '@/types/workflow';
+
+export const MOCK_WORKFLOWS: Workflow[] = [
+  {
+    id: 'wf-001',
+    name: 'Salesforce to Slack Notifier',
+    status: 'active',
+    trigger: 'Webhook',
+    lastRun: '2026-05-09T08:23:00Z',
+    steps: 4,
+    createdAt: '2026-03-01T00:00:00Z',
+  },
+  {
+    id: 'wf-002',
+    name: 'Daily Report Generator',
+    status: 'active',
+    trigger: 'Schedule',
+    lastRun: '2026-05-09T06:00:00Z',
+    steps: 6,
+    createdAt: '2026-03-15T00:00:00Z',
+  },
+  {
+    id: 'wf-003',
+    name: 'Lead Enrichment Pipeline',
+    status: 'failed',
+    trigger: 'Webhook',
+    lastRun: '2026-05-08T14:12:00Z',
+    steps: 5,
+    createdAt: '2026-04-01T00:00:00Z',
+  },
+  {
+    id: 'wf-004',
+    name: 'Invoice Email Sync',
+    status: 'disabled',
+    trigger: 'Email',
+    lastRun: '2026-04-20T10:00:00Z',
+    steps: 3,
+    createdAt: '2026-02-10T00:00:00Z',
+  },
+  {
+    id: 'wf-005',
+    name: 'Customer Onboarding Flow',
+    status: 'running',
+    trigger: 'Webhook',
+    lastRun: '2026-05-09T09:01:00Z',
+    steps: 8,
+    createdAt: '2026-04-20T00:00:00Z',
+  },
+  {
+    id: 'wf-006',
+    name: 'Support Ticket Router',
+    status: 'active',
+    trigger: 'Email',
+    lastRun: '2026-05-09T07:45:00Z',
+    steps: 4,
+    createdAt: '2026-04-28T00:00:00Z',
+  },
+];
