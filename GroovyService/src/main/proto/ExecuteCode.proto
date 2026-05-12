@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.minipaas.groovy";
+option java_outer_classname = "ExecuteCodeProto";
+
+message Executable {
+  string input_code = 1;
+  map<string, string> bindings = 2;   // optional: vars passed to the script
+  int32 timeout_ms = 3;
+}
+
+message Output {
+  bool success = 1;
+  string stdout = 2;
+  string stderr = 3;
+  string error_message = 4;           // populated on failure
+  int64 duration_ms = 5;
+}
+
+service RunGroovy {
+  rpc Run(Executable) returns (Output);
+}

@@ -6,10 +6,12 @@ A minimal Integration Platform as a Service (iPaaS) — think Workato or Zapier 
 
 ```
 Min-iPaas/
-└── WorkflowBuilder/    # React frontend service
+├── WorkflowBuilder/    # React frontend service
+├── Gateway/            # Spring Boot API gateway (MongoDB-backed)
+└── GroovyService/      # gRPC service that executes Groovy scripts
 ```
 
-Future services (backend API, worker, etc.) will live as sibling directories alongside `WorkflowBuilder/`.
+Each service is self-contained. Future services live as sibling directories.
 
 ## WorkflowBuilder
 
@@ -55,6 +57,54 @@ npm run dev       # http://localhost:3000
 - **Config panel** — opens on the right when a node is clicked; fields defined per node type
 - **Node types** — Triggers (4), Actions (HTTP Request, Transform, Slack, Email Send), Conditions (Filter, Router)
 
-### Adding a new service
+## GroovyService
 
-Create a new top-level directory (e.g., `ApiServer/`) with its own `package.json`. Each service is self-contained — no shared root `node_modules`.
+gRPC service that executes Groovy scripts on demand. Used by the `Executable` trigger in WorkflowBuilder to run arbitrary user code.
+
+### Tech Stack
+
+| Layer | Library |
+|---|---|
+| Runtime | Java 21 |
+| Framework | Spring Boot 4.0 + spring-grpc |
+| Schema | Protocol Buffers (proto3) |
+| Scripting | Apache Groovy 4.0 (`GroovyShell`) |
+| Build | Maven (`protobuf-maven-plugin` for codegen) |
+
+### Running locally
+
+```bash
+cd GroovyService
+./mvnw spring-boot:run     # gRPC server on localhost:9090
+```
+
+### API
+
+Service `RunGroovy` exposes a single unary RPC: `Run(Executable) → Output`.
+
+**Executable**
+- `input_code` (string) — Groovy source to evaluate
+- `bindings` (map<string,string>) — variables injected into the script's binding
+- `timeout_ms` (int32) — reserved for future use
+
+**Output**
+- `success` (bool) — false on any thrown exception (omitted in JSON when false)
+- `stdout` / `stderr` (string) — captured streams
+- `error_message` (string) — exception message on failure
+- `duration_ms` (int64)
+
+### Testing with grpcurl
+
+Server reflection is enabled, so no `.proto` files needed:
+
+```bash
+grpcurl -plaintext localhost:9090 list
+grpcurl -plaintext -d '{"input_code": "println \"hello\"; return 42"}' \
+  localhost:9090 RunGroovy/Run
+grpcurl -plaintext -d '{"input_code": "println name", "bindings": {"name": "Pulkit"}}' \
+  localhost:9090 RunGroovy/Run
+```
+
+## Adding a new service
+
+Create a new top-level directory (e.g., `ApiServer/`) with its own build manifest (`package.json`, `pom.xml`, etc.). Each service is self-contained — no shared root dependencies.
