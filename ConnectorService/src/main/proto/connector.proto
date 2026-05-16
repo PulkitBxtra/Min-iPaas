@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.minipaas.connector";
+option java_outer_classname = "ConnectorProto";
+
+// Returns a guaranteed-valid access token for a previously-registered connection.
+// The service refreshes the token transparently if it is expired or near expiry.
+service ConnectorTokens {
+  rpc GetAccessToken(GetAccessTokenRequest) returns (AccessToken);
+}
+
+message GetAccessTokenRequest {
+  string connection_id = 1;
+}
+
+message AccessToken {
+  string access_token = 1;
+  string token_type = 2;          // typically "Bearer"
+  int64 expires_at_epoch_ms = 3;  // absolute expiry; 0 if the provider sent no TTL
+  string status = 4;              // ACTIVE | ERROR
+}

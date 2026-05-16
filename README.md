@@ -105,6 +105,68 @@ grpcurl -plaintext -d '{"input_code": "println name", "bindings": {"name": "Pulk
   localhost:9090 RunGroovy/Run
 ```
 
+## ConnectorService
+
+OAuth2 credential vault. Registers connections to external providers (authorization-code or client-credentials), stores access/refresh tokens, auto-refreshes them before expiry, and serves a guaranteed-valid access token by `connectionId` over gRPC.
+
+### Tech Stack
+
+| Layer | Library |
+|---|---|
+| Runtime | Java 21 |
+| Framework | Spring Boot 4.0 + spring-grpc |
+| Persistence | Spring Data JPA → Neon Postgres |
+| Schema | Protocol Buffers (proto3) |
+
+### Running locally
+
+```bash
+cd ConnectorService
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local   # REST :8081, gRPC :9090
+```
+
+Secrets (Neon URL/password, provider client secrets) live in the gitignored `src/main/resources/application-local.properties`.
+
+### API
+
+- REST `POST /connections` — register (client-credentials → `ACTIVE`; auth-code → returns `authorizationUrl`)
+- REST `GET /oauth/callback` — provider redirect target
+- gRPC `ConnectorTokens/GetAccessToken` — `{connection_id}` → valid access token
+
+## AppCatalogService
+
+Connector/action catalog: *what apps exist and how to call them* (auth config, actions, triggers, their props/JSON-schemas). Seeded from a vendored [Activepieces](https://www.activepieces.com) (MIT) metadata snapshot. Non-secret, read-heavy — kept separate from ConnectorService.
+
+### Tech Stack
+
+| Layer | Library |
+|---|---|
+| Runtime | Java 21 |
+| Framework | Spring Boot 4.0 + spring-grpc (web variant) |
+| Persistence | Spring Data MongoDB (Atlas; db `AppCatalog`) |
+| Schema | Protocol Buffers (proto3, `google.protobuf.Struct` for prop passthrough) |
+
+### Refreshing the catalog snapshot
+
+```bash
+cd AppCatalogService
+bash scripts/fetch-snapshot.sh   # pulls cloud.activepieces.com → src/main/resources/catalog/activepieces-pieces.json
+```
+
+### Running locally
+
+```bash
+cd AppCatalogService
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local   # REST + gRPC on :8082
+```
+
+On first boot (empty collection, or `catalog.reseed=true`) the snapshot is loaded into MongoDB. Mongo URI lives in the gitignored `application-local.properties`.
+
+### API
+
+- REST `GET /apps?search=&category=`, `GET /apps/{key}`, `GET /apps/{key}/actions/{name}`, `GET /categories`
+- gRPC `AppCatalog/{ListApps,GetApp,GetOperation}` (reflection enabled; no proto package, like `RunGroovy`)
+
 ## Adding a new service
 
 Create a new top-level directory (e.g., `ApiServer/`) with its own build manifest (`package.json`, `pom.xml`, etc.). Each service is self-contained — no shared root dependencies.

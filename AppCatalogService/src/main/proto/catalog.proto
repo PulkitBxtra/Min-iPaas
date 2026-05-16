@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
+option java_package = "com.minipaas.catalog";
+option java_outer_classname = "CatalogProto";
+
+// Read-only catalog of connectors (apps) sourced from Activepieces:
+// what apps exist and how to call their actions/triggers.
+service AppCatalog {
+  rpc ListApps(ListAppsRequest) returns (AppList);
+  rpc GetApp(GetAppRequest) returns (App);
+  rpc GetOperation(GetOperationRequest) returns (Operation);
+}
+
+message ListAppsRequest {
+  string search = 1;    // optional, matched against key/displayName
+  string category = 2;  // optional category filter
+}
+
+message AppList {
+  repeated AppSummary apps = 1;
+}
+
+message AppSummary {
+  string key = 1;            // short slug, e.g. "slack"
+  string display_name = 2;
+  string description = 3;
+  string logo_url = 4;
+  string auth_type = 5;      // SECRET_TEXT | OAUTH2 | CUSTOM_AUTH | NONE
+  int32 action_count = 6;
+  int32 trigger_count = 7;
+  repeated string categories = 8;
+}
+
+message GetAppRequest {
+  string key = 1;
+}
+
+message App {
+  string key = 1;
+  string name = 2;           // full piece name, e.g. @activepieces/piece-slack
+  string display_name = 3;
+  string description = 4;
+  string version = 5;
+  string logo_url = 6;
+  string piece_type = 7;
+  repeated string categories = 8;
+  google.protobuf.Struct auth = 9;          // raw Activepieces auth schema
+  repeated Operation actions = 10;
+  repeated Operation triggers = 11;
+}
+
+message GetOperationRequest {
+  string app_key = 1;
+  string kind = 2;   // "action" | "trigger"
+  string name = 3;
+}
+
+message Operation {
+  string name = 1;
+  string display_name = 2;
+  string description = 3;
+  bool require_auth = 4;
+  google.protobuf.Struct props = 5;   // raw Activepieces prop schema
+}
